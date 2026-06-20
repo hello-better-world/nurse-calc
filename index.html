@@ -258,6 +258,38 @@
     }
     .btn-reset:active { background: #eaf0ff; }
 
+    /* 单位选择器 */
+    .unit-selector {
+      display: flex;
+      background: #f0f2f5;
+      border-radius: 10px;
+      padding: 3px;
+      margin-bottom: 18px;
+    }
+    .unit-selector button {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 8px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #888;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .unit-selector button.active {
+      background: white;
+      color: #2b7fff;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+    }
+    .unit-selector-label {
+      font-size: 13px;
+      color: #666;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
     /* 错误提示 */
     .error-msg {
       display: none;
@@ -295,11 +327,17 @@
       输入配药信息
     </div>
 
+    <div class="unit-selector-label">药量单位</div>
+    <div class="unit-selector">
+      <button id="btn-mg" class="active" onclick="setUnit('mg')">毫克（mg）</button>
+      <button id="btn-wu" onclick="setUnit('万U')">万单位（万U）</button>
+    </div>
+
     <div class="field">
       <label>药瓶中药物总量</label>
       <div class="input-row">
         <input type="number" id="drugTotal" placeholder="如：8" inputmode="decimal" />
-        <span class="unit">mg</span>
+        <span class="unit" id="unitLabel1">mg</span>
       </div>
     </div>
 
@@ -315,7 +353,7 @@
       <label>需要的剂量</label>
       <div class="input-row">
         <input type="number" id="desiredDose" placeholder="如：2.4" inputmode="decimal" />
-        <span class="unit">mg</span>
+        <span class="unit" id="unitLabel2">mg</span>
       </div>
     </div>
 
@@ -399,6 +437,19 @@
   </div>
 
   <script>
+    // 当前选中单位
+    let currentUnit = 'mg';
+
+    function setUnit(u) {
+      currentUnit = u;
+      // 切换按钮样式
+      document.getElementById('btn-mg').classList.toggle('active', u === 'mg');
+      document.getElementById('btn-wu').classList.toggle('active', u === '万U');
+      // 同步两个输入框的单位标签
+      document.getElementById('unitLabel1').textContent = u;
+      document.getElementById('unitLabel2').textContent = u;
+    }
+
     function fmt(n) {
       // 最多保留4位小数，去掉尾部0
       return parseFloat(n.toFixed(4)).toString();
@@ -409,6 +460,7 @@
       const solventVol  = parseFloat(document.getElementById('solventVol').value);
       const desiredDose = parseFloat(document.getElementById('desiredDose').value);
       const errEl = document.getElementById('errorMsg');
+      const u = currentUnit;  // 当前单位，如 'mg' 或 '万U'
 
       // 校验
       errEl.style.display = 'none';
@@ -423,32 +475,32 @@
         return;
       }
       if (desiredDose > drugTotal) {
-        errEl.textContent = `需要剂量 (${desiredDose}mg) 超过了药瓶总量 (${drugTotal}mg)，请检查`;
+        errEl.textContent = `需要剂量 (${desiredDose}${u}) 超过了药瓶总量 (${drugTotal}${u})，请检查`;
         errEl.style.display = 'block';
         return;
       }
 
-      // 计算
-      const concentration = drugTotal / solventVol;          // mg/mL
-      const extractVol    = desiredDose / concentration;     // mL
+      // 计算（单位不影响比例，结果始终是 mL）
+      const concentration = drugTotal / solventVol;      // [u]/mL
+      const extractVol    = desiredDose / concentration; // mL
 
       // 显示结果
       document.getElementById('resultVal').textContent = fmt(extractVol);
 
       // 步骤1
       document.getElementById('step1Formula').innerHTML =
-        `浓度 = ${fmt(drugTotal)}mg ÷ ${fmt(solventVol)}mL = <span class="hl">${fmt(concentration)} mg/mL</span>`;
+        `浓度 = ${fmt(drugTotal)}${u} ÷ ${fmt(solventVol)}mL = <span class="hl">${fmt(concentration)} ${u}/mL</span>`;
 
       // 步骤2
       document.getElementById('step2Formula').innerHTML =
-        `抽取量 = ${fmt(desiredDose)}mg ÷ ${fmt(concentration)}mg/mL = <span class="hl">${fmt(extractVol)} mL</span>`;
+        `抽取量 = ${fmt(desiredDose)}${u} ÷ ${fmt(concentration)}${u}/mL = <span class="hl">${fmt(extractVol)} mL</span>`;
 
       // 步骤3
       document.getElementById('step3Formula').innerHTML =
         `抽取量 = ${fmt(solventVol)}mL × (${fmt(desiredDose)} ÷ ${fmt(drugTotal)}) = <span class="hl">${fmt(extractVol)} mL</span>`;
 
       // 图示
-      const ratio = extractVol / solventVol;  // 抽取量占总溶液的比例
+      const ratio = extractVol / solventVol;
       document.getElementById('vialFill').style.height    = '100%';
       document.getElementById('vialExtract').style.height = (ratio * 100).toFixed(1) + '%';
       document.getElementById('vialLabel').textContent    = `共 ${fmt(solventVol)} mL，蓝色深色部分为抽取量`;
@@ -459,7 +511,6 @@
       document.getElementById('inputCard').style.display  = 'none';
       document.getElementById('resultCard').style.display = 'block';
 
-      // 滚动到顶部
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -471,6 +522,7 @@
       document.getElementById('inputCard').style.display  = 'block';
       document.getElementById('resultCard').style.display = 'none';
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      // 保留上次的单位选择，不重置
     }
 
     // 支持回车触发计算
