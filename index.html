@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="配药计算" />
+  <title>配药计算器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      background: #f2f4f8;
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+
+    /* 顶部 */
+    .header {
+      background: linear-gradient(135deg, #2b7fff, #1a5fd4);
+      color: white;
+      padding: 52px 24px 28px;
+      text-align: center;
+    }
+    .header h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+    .header p  { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+
+    /* 卡片 */
+    .card {
+      background: white;
+      border-radius: 18px;
+      margin: 20px 16px 0;
+      padding: 22px 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title .icon {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: #eaf0ff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+    }
+
+    /* 输入区 */
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    .input-row {
+      display: flex;
+      align-items: center;
+      background: #f5f7fa;
+      border-radius: 12px;
+      border: 1.5px solid #e8eaf0;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .input-row:focus-within { border-color: #2b7fff; }
+    .input-row input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 13px 14px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a1a;
+      outline: none;
+      width: 0;
+    }
+    .input-row .unit {
+      padding: 0 14px;
+      font-size: 13px;
+      color: #999;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* 计算按钮 */
+    .btn-calc {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #2b7fff, #1a5fd4);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 4px;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 14px rgba(43,127,255,0.35);
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-calc:active { opacity: 0.85; transform: scale(0.98); }
+
+    /* 结果区 */
+    .result-card { display: none; }
+
+    .result-answer {
+      text-align: center;
+      padding: 20px 0 14px;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 18px;
+    }
+    .result-answer .label { font-size: 13px; color: #888; margin-bottom: 6px; }
+    .result-answer .value {
+      font-size: 52px;
+      font-weight: 800;
+      color: #2b7fff;
+      line-height: 1;
+    }
+    .result-answer .unit-big { font-size: 20px; font-weight: 600; color: #2b7fff; }
+
+    /* 步骤 */
+    .steps-title {
+      font-size: 13px;
+      color: #888;
+      font-weight: 600;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    .step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: #eaf0ff;
+      color: #2b7fff;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-body { flex: 1; }
+    .step-desc { font-size: 13px; color: #555; line-height: 1.5; }
+    .step-formula {
+      background: #f5f7fa;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a1a1a;
+      font-family: "Courier New", monospace;
+    }
+    .step-formula .hl { color: #2b7fff; }
+
+    /* 可视化瓶子 */
+    .vial-wrap {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .vial-title { font-size: 13px; color: #888; font-weight: 600; margin-bottom: 14px; }
+    .vial-outer {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+    }
+    .vial {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .vial-label-top { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+    .vial-body {
+      width: 64px;
+      height: 120px;
+      border: 2.5px solid #c8d8ff;
+      border-radius: 4px 4px 10px 10px;
+      background: #f0f5ff;
+      position: relative;
+      overflow: hidden;
+    }
+    .vial-fill {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(43,127,255,0.18);
+      transition: height 0.5s ease;
+    }
+    .vial-extract {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(43,127,255,0.5);
+      transition: height 0.5s ease;
+    }
+    .vial-label { font-size: 11px; color: #666; margin-top: 6px; text-align: center; }
+
+    .syringe-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding-bottom: 2px;
+    }
+    .syringe-label { font-size: 11px; color: #aaa; }
+    .syringe-body {
+      width: 36px; height: 80px;
+      border: 2.5px solid #ff9f2b;
+      border-radius: 4px 4px 2px 2px;
+      background: #fff8ee;
+      position: relative;
+      overflow: hidden;
+    }
+    .syringe-fill {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(255,159,43,0.4);
+      transition: height 0.5s ease;
+    }
+    .syringe-tip {
+      width: 8px; height: 14px;
+      background: #e88c1a;
+      border-radius: 0 0 4px 4px;
+      margin: 0 auto;
+    }
+    .syringe-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: #e88c1a;
+      text-align: center;
+    }
+
+    /* 重置按钮 */
+    .btn-reset {
+      width: 100%;
+      padding: 14px;
+      background: transparent;
+      color: #2b7fff;
+      border: 1.5px solid #c8d8ff;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: background 0.15s;
+    }
+    .btn-reset:active { background: #eaf0ff; }
+
+    /* 错误提示 */
+    .error-msg {
+      display: none;
+      background: #fff2f2;
+      border: 1px solid #ffcdd2;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #d32f2f;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    /* 底部提示 */
+    .footer-tip {
+      text-align: center;
+      font-size: 11px;
+      color: #bbb;
+      margin: 20px 16px 0;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>💊 配药计算器</h1>
+    <p>粉剂溶解后抽取剂量计算</p>
+  </div>
+
+  <!-- 输入卡片 -->
+  <div class="card" id="inputCard">
+    <div class="card-title">
+      <span class="icon">📥</span>
+      输入配药信息
+    </div>
+
+    <div class="field">
+      <label>药瓶中药物总量</label>
+      <div class="input-row">
+        <input type="number" id="drugTotal" placeholder="如：8" inputmode="decimal" />
+        <span class="unit">mg</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>注入生理盐水量</label>
+      <div class="input-row">
+        <input type="number" id="solventVol" placeholder="如：4" inputmode="decimal" />
+        <span class="unit">mL</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>需要的剂量</label>
+      <div class="input-row">
+        <input type="number" id="desiredDose" placeholder="如：2.4" inputmode="decimal" />
+        <span class="unit">mg</span>
+      </div>
+    </div>
+
+    <button class="btn-calc" onclick="calculate()">开始计算</button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <!-- 结果卡片 -->
+  <div class="card result-card" id="resultCard">
+    <div class="card-title">
+      <span class="icon">✅</span>
+      计算结果
+    </div>
+
+    <div class="result-answer">
+      <div class="label">需要从瓶中抽出</div>
+      <div>
+        <span class="value" id="resultVal">--</span>
+        <span class="unit-big"> mL</span>
+      </div>
+    </div>
+
+    <!-- 步骤解析 -->
+    <div class="steps-title">📖 详细步骤解析</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-desc">往药瓶中注入生理盐水，药物完全溶解，形成均匀溶液</div>
+        <div class="step-formula" id="step1Formula">浓度 = 8mg ÷ 4mL = <span class="hl">2 mg/mL</span></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-desc">知道浓度之后，用需要的剂量 ÷ 浓度，算出要抽多少mL</div>
+        <div class="step-formula" id="step2Formula">抽取量 = 2.4mg ÷ 2mg/mL = <span class="hl">1.2 mL</span></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-desc">也可以直接用这个公式一步算出来</div>
+        <div class="step-formula" id="step3Formula">抽取量 = 4mL × (2.4 ÷ 8) = <span class="hl">1.2 mL</span></div>
+      </div>
+    </div>
+
+    <!-- 可视化 -->
+    <div class="vial-wrap">
+      <div class="vial-title">📊 直观图示</div>
+      <div class="vial-outer">
+        <div class="vial">
+          <div class="vial-label-top">药瓶（溶解后）</div>
+          <div class="vial-body">
+            <div class="vial-fill" id="vialFill" style="height:100%"></div>
+            <div class="vial-extract" id="vialExtract" style="height:0%"></div>
+          </div>
+          <div class="vial-label" id="vialLabel">4 mL 溶液</div>
+        </div>
+
+        <div style="font-size:22px;padding-bottom:42px;color:#ccc;">→</div>
+
+        <div class="syringe-wrap">
+          <div class="syringe-label">注射器</div>
+          <div class="syringe-body">
+            <div class="syringe-fill" id="syringeFill" style="height:0%"></div>
+          </div>
+          <div class="syringe-tip"></div>
+          <div class="syringe-value" id="syringeLabel">1.2 mL</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-reset" onclick="reset()">重新计算</button>
+  </div>
+
+  <div class="footer-tip">
+    ⚠️ 本工具仅供辅助计算参考，请结合医嘱和临床规范使用
+  </div>
+
+  <script>
+    function fmt(n) {
+      // 最多保留4位小数，去掉尾部0
+      return parseFloat(n.toFixed(4)).toString();
+    }
+
+    function calculate() {
+      const drugTotal   = parseFloat(document.getElementById('drugTotal').value);
+      const solventVol  = parseFloat(document.getElementById('solventVol').value);
+      const desiredDose = parseFloat(document.getElementById('desiredDose').value);
+      const errEl = document.getElementById('errorMsg');
+
+      // 校验
+      errEl.style.display = 'none';
+      if (isNaN(drugTotal) || isNaN(solventVol) || isNaN(desiredDose)) {
+        errEl.textContent = '请填写所有输入项';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (drugTotal <= 0 || solventVol <= 0 || desiredDose <= 0) {
+        errEl.textContent = '所有数值必须大于 0';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (desiredDose > drugTotal) {
+        errEl.textContent = `需要剂量 (${desiredDose}mg) 超过了药瓶总量 (${drugTotal}mg)，请检查`;
+        errEl.style.display = 'block';
+        return;
+      }
+
+      // 计算
+      const concentration = drugTotal / solventVol;          // mg/mL
+      const extractVol    = desiredDose / concentration;     // mL
+
+      // 显示结果
+      document.getElementById('resultVal').textContent = fmt(extractVol);
+
+      // 步骤1
+      document.getElementById('step1Formula').innerHTML =
+        `浓度 = ${fmt(drugTotal)}mg ÷ ${fmt(solventVol)}mL = <span class="hl">${fmt(concentration)} mg/mL</span>`;
+
+      // 步骤2
+      document.getElementById('step2Formula').innerHTML =
+        `抽取量 = ${fmt(desiredDose)}mg ÷ ${fmt(concentration)}mg/mL = <span class="hl">${fmt(extractVol)} mL</span>`;
+
+      // 步骤3
+      document.getElementById('step3Formula').innerHTML =
+        `抽取量 = ${fmt(solventVol)}mL × (${fmt(desiredDose)} ÷ ${fmt(drugTotal)}) = <span class="hl">${fmt(extractVol)} mL</span>`;
+
+      // 图示
+      const ratio = extractVol / solventVol;  // 抽取量占总溶液的比例
+      document.getElementById('vialFill').style.height    = '100%';
+      document.getElementById('vialExtract').style.height = (ratio * 100).toFixed(1) + '%';
+      document.getElementById('vialLabel').textContent    = `共 ${fmt(solventVol)} mL，蓝色深色部分为抽取量`;
+      document.getElementById('syringeFill').style.height = '80%';
+      document.getElementById('syringeLabel').textContent = `${fmt(extractVol)} mL`;
+
+      // 切换显示
+      document.getElementById('inputCard').style.display  = 'none';
+      document.getElementById('resultCard').style.display = 'block';
+
+      // 滚动到顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function reset() {
+      document.getElementById('drugTotal').value   = '';
+      document.getElementById('solventVol').value  = '';
+      document.getElementById('desiredDose').value = '';
+      document.getElementById('errorMsg').style.display  = 'none';
+      document.getElementById('inputCard').style.display  = 'block';
+      document.getElementById('resultCard').style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 支持回车触发计算
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') calculate();
+    });
+  </script>
+</body>
+</html>
