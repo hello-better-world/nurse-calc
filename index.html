@@ -258,36 +258,43 @@
     }
     .btn-reset:active { background: #eaf0ff; }
 
-    /* 单位选择器 */
-    .unit-selector {
-      display: flex;
-      background: #f0f2f5;
-      border-radius: 10px;
-      padding: 3px;
+    /* 单位下拉选择器 */
+    .unit-select-wrap {
       margin-bottom: 18px;
     }
-    .unit-selector button {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 8px 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: #888;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .unit-selector button.active {
-      background: white;
-      color: #2b7fff;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.12);
-    }
-    .unit-selector-label {
+    .unit-select-wrap label {
+      display: block;
       font-size: 13px;
       color: #666;
       font-weight: 500;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+    }
+    .select-row {
+      display: flex;
+      align-items: center;
+      background: #f5f7fa;
+      border-radius: 12px;
+      border: 1.5px solid #e8eaf0;
+      padding: 0 14px;
+      transition: border-color 0.2s;
+    }
+    .select-row:focus-within { border-color: #2b7fff; }
+    .select-row select {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 13px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a1a;
+      outline: none;
+      appearance: none;
+      cursor: pointer;
+    }
+    .select-arrow {
+      font-size: 12px;
+      color: #aaa;
+      pointer-events: none;
     }
 
     /* 错误提示 */
@@ -327,10 +334,16 @@
       输入配药信息
     </div>
 
-    <div class="unit-selector-label">药量单位</div>
-    <div class="unit-selector">
-      <button id="btn-mg" class="active" onclick="setUnit('mg')">毫克（mg）</button>
-      <button id="btn-wu" onclick="setUnit('万U')">万单位（万U）</button>
+    <div class="unit-select-wrap">
+      <label>药量单位</label>
+      <div class="select-row">
+        <select id="unitSelect" onchange="setUnit(this.value)">
+          <option value="mg">毫克（mg）</option>
+          <option value="g">克（g）</option>
+          <option value="万U">万单位（万U）</option>
+        </select>
+        <span class="select-arrow">▼</span>
+      </div>
     </div>
 
     <div class="field">
@@ -442,10 +455,6 @@
 
     function setUnit(u) {
       currentUnit = u;
-      // 切换按钮样式
-      document.getElementById('btn-mg').classList.toggle('active', u === 'mg');
-      document.getElementById('btn-wu').classList.toggle('active', u === '万U');
-      // 同步两个输入框的单位标签
       document.getElementById('unitLabel1').textContent = u;
       document.getElementById('unitLabel2').textContent = u;
     }
